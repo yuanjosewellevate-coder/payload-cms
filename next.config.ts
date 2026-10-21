@@ -7,6 +7,20 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  // Disable all page/data caching in development so every save is immediately visible.
+  ...(process.env.NODE_ENV === 'development' && {
+    experimental: {
+      staleTimes: { dynamic: 0, static: 30 },
+      // Next caches fetch() responses in Server Components across HMR refreshes by default.
+      serverComponentsHmrCache: false,
+    },
+    headers: async () => [
+      {
+        source: '/(.*)',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
+    ],
+  }),
   images: {
     localPatterns: [
       {

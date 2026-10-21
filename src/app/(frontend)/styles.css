@@ -1,8 +1,42 @@
+/* ── Saans (local web font) ─────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Saans';
+  src: url('/fonts/Saans-Light.woff2') format('woff2'),
+       url('/fonts/Saans-Light.woff') format('woff');
+  font-weight: 300 400; /* covers Light (300) and Regular (400) — no separate Regular file */
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Saans';
+  src: url('/fonts/Saans-Bold.woff2') format('woff2'),
+       url('/fonts/Saans-Bold.woff') format('woff');
+  font-weight: 500 700; /* covers Medium (500), SemiBold (600), Bold (700) */
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Saans';
+  src: url('/fonts/Saans-Heavy.woff2') format('woff2'),
+       url('/fonts/Saans-Heavy.woff') format('woff');
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SaansMono';
+  src: url('/fonts/SaansMono-Regular.woff2') format('woff2'),
+       url('/fonts/SaansMono-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Theme variables are injected on <html> from General Settings → Theme (see layout.tsx).
    These are fallbacks only. */
 :root {
-  --font-heading: system-ui, sans-serif;
-  --font-body: system-ui, sans-serif;
+  --font-heading: 'Saans', sans-serif;
+  --font-body: 'Saans', sans-serif;
   --color-primary: #4f46e5;
   --color-on-primary: #ffffff;
   --color-bg: #ffffff;
@@ -162,7 +196,6 @@ img {
   top: 0;
   z-index: 10;
   background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-  border-bottom: 1px solid var(--color-border);
   backdrop-filter: blur(10px);
 }
 
@@ -191,22 +224,56 @@ img {
 }
 
 .siteHeader__burger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+.siteHeader__burger span,
+.siteHeader__burger span::before,
+.siteHeader__burger span::after {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--color-heading);
+  content: '';
+}
+
+.siteHeader__burger span {
+  position: relative;
+}
+
+.siteHeader__burger span::before {
+  position: absolute;
+  top: -6px;
+}
+
+.siteHeader__burger span::after {
+  position: absolute;
+  top: 6px;
+}
+
+.siteNav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   display: none;
+  padding: 12px var(--gutter) 20px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.siteHeader__toggle:checked ~ .siteNav {
+  display: block;
 }
 
 .siteNav ul {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.siteNav > ul {
-  display: flex;
-  gap: 4px;
-}
-
-.siteNav li {
-  position: relative;
 }
 
 .siteNav a {
@@ -223,91 +290,62 @@ img {
   color: var(--color-heading);
 }
 
-.siteNav__submenu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 200px;
-  padding: 6px !important;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.08);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(4px);
-  transition: all 0.15s ease;
+/* Careers banner */
+.careers-banner {
+  padding: clamp(56px, 10vw, 112px) 0 clamp(48px, 8vw, 88px);
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    color-mix(in srgb, var(--color-primary) 10%, transparent),
+    transparent 70%
+  );
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  height: 100vh;
 }
 
-.siteNav li:hover > .siteNav__submenu,
-.siteNav li:focus-within > .siteNav__submenu {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
+.careers-banner__inner {
+  max-width: 640px;
 }
 
-@media (max-width: 768px) {
-  .siteHeader__burger {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    cursor: pointer;
-  }
-
-  .siteHeader__burger span,
-  .siteHeader__burger span::before,
-  .siteHeader__burger span::after {
-    display: block;
-    width: 20px;
-    height: 2px;
-    background: var(--color-heading);
-    content: '';
-  }
-
-  .siteHeader__burger span {
-    position: relative;
-  }
-
-  .siteHeader__burger span::before {
-    position: absolute;
-    top: -6px;
-  }
-
-  .siteHeader__burger span::after {
-    position: absolute;
-    top: 6px;
-  }
-
-  .siteNav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    display: none;
-    padding: 12px var(--gutter) 20px;
-    background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .siteHeader__toggle:checked ~ .siteNav {
-    display: block;
-  }
-
-  .siteNav > ul {
-    flex-direction: column;
-  }
-
-  .siteNav__submenu {
-    position: static;
-    padding: 0 0 0 12px !important;
-    border: 0;
-    box-shadow: none;
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-  }
+.careers-banner__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
 }
+
+.careers-banner__eyebrow-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.careers-banner__heading {
+  margin-bottom: 30px;
+  font-family: var(--font-heading, sans-serif);
+  font-size: clamp(2.25rem, 5vw + 1rem, 3.75rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--color-heading);
+  text-wrap: balance;
+}
+
+.careers-banner__description {
+  margin: 0;
+  font-size: clamp(1rem, 1.5vw + 0.5rem, 1.1875rem);
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  max-width: 520px;
+  text-wrap: balance;
+}
+
 
 /* Sections */
 .hero {
@@ -342,6 +380,30 @@ img {
   max-width: 620px;
   margin: 0 auto 48px;
   text-align: center;
+}
+
+.job-list__heading {
+  margin-bottom: 32px;
+}
+
+.job-list__heading h2 {
+  margin: 0 0 8px;
+}
+
+.job-list__heading p {
+  margin: 0;
+}
+
+.job-list__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .job-list__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cardGrid {
@@ -428,33 +490,34 @@ img {
 
 /* Footer */
 .siteFooter {
-  padding: 56px 0 32px;
+  padding: 20px 0;
   border-top: 1px solid var(--color-border);
 }
 
-.siteFooter__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.siteFooter__inner {
+  display: flex;
+  align-items: center;
   gap: 32px;
-  margin-bottom: 40px;
 }
 
 .siteFooter__brand {
-  margin-bottom: 0.5em;
+  display: inline-flex;
+  align-items: center;
   color: var(--color-heading);
   font-family: var(--font-heading);
   font-size: 1.125rem;
   font-weight: 700;
+  text-decoration: none;
 }
 
-.siteFooter ul {
+.siteFooter__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.siteFooter li + li {
-  margin-top: 8px;
 }
 
 .siteFooter a {
@@ -464,13 +527,6 @@ img {
 
 .siteFooter a:hover {
   color: var(--color-primary);
-}
-
-.siteFooter__copyright {
-  margin: 0;
-  padding-top: 24px;
-  border-top: 1px solid var(--color-border);
-  font-size: 0.875rem;
 }
 
 .sectionFooter {
