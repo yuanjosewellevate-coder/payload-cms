@@ -13,6 +13,7 @@ import { isAdmin } from '../access/isAdmin'
 import { runAIReview } from '../recruitment/aiReview'
 import {
   notifyHeadOfPlusInterview,
+  notifyHeadOfPlusNewApplication,
   sendAssessmentScheduled,
   sendFinalInterview,
   sendInterviewBooked,
@@ -56,7 +57,12 @@ const beforeChange: CollectionBeforeChangeHook<Application> = ({ data, originalD
 
 // Sends the emails for each step and keeps the linked assessment in sync. Every action is
 // keyed on a field changing, so re-saving an application never sends an email twice.
-const afterChange: CollectionAfterChangeHook<Application> = async ({ doc, previousDoc, req }) => {
+const afterChange: CollectionAfterChangeHook<Application> = async ({
+  doc,
+  previousDoc,
+  operation,
+  req,
+}) => {
   const { payload } = req
   const prev: Partial<Application> = previousDoc ?? {}
   const job = (
@@ -64,6 +70,11 @@ const afterChange: CollectionAfterChangeHook<Application> = async ({ doc, previo
       ? doc.job
       : await payload.findByID({ collection: 'jobs', id: doc.job, depth: 0, req })
   ) as Job
+
+  // Step 2: a candidate applied.
+  if (operation === 'create') {
+    await notifyHeadOfPlusNewApplication(payload, doc, job)
+  }
 
   // Step 3: AI score reached the minimum (or an admin ticked "Shortlisted").
   if (doc.stage === 'invited_to_schedule' && prev.stage !== 'invited_to_schedule') {
@@ -127,6 +138,8 @@ const afterChange: CollectionAfterChangeHook<Application> = async ({ doc, previo
           status: 'invited',
           result: 'pending',
         },
+        // sendAssessmentScheduled below sends its own "technical assessment scheduled" email.
+        context: { skipInviteEmail: true },
         req,
       })
       await payload.update({
@@ -275,26 +288,29 @@ export const Applications: CollectionConfig = {
         },
         {
           label: 'Initial interview',
-          description:
-            'The candidate books one of the open Interview slots from the emailed link. You can also set the time here yourself.',
+          description: 'Set the date and time for the initial interview.',
           fields: [
             {
-              type: 'row',
-              fields: [
-                {
-                  name: 'initialInterviewSlot',
-                  label: 'Booked slot',
-                  type: 'relationship',
-                  relationTo: 'interview-slots',
-                  admin: { readOnly: true },
-                },
-                {
-                  name: 'initialInterviewAt',
-                  label: 'Interview time',
-                  type: 'date',
-                  admin: dayAndTime,
-                },
-              ],
+              name: 'initialInterviewAt',
+              label: 'Interview time',
+              type: 'date',
+              admin: dayAndTime,
+            },
+            {
+              name: 'initialInterviewLink',
+              label: 'Meeting link',
+              type: 'text',
+              admin: {
+                description:
+                  'Paste a Teams (or Zoom/Meet) meeting link. Included in the email when you save.',
+                condition: (data) => Boolean(data?.initialInterviewAt),
+              },
+            },
+            {
+              name: 'initialInterviewSlot',
+              type: 'relationship',
+              relationTo: 'interview-slots',
+              admin: { hidden: true },
             },
             {
               name: 'initialResult',

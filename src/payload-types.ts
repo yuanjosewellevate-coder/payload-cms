@@ -183,7 +183,7 @@ export interface Page {
   id: number;
   title: string;
   /**
-   * Use "home" for the homepage. Other pages are served at /<slug>.
+   * Generated from the title. Use "home" for the homepage; other pages are served at /<slug>.
    */
   slug: string;
   layout?:
@@ -547,7 +547,11 @@ export interface Assessment {
    * Shown on the applicant's dashboard.
    */
   result: 'pending' | 'passed' | 'failed';
+  /**
+   * Set by picking an existing applicant in the Candidate email field above.
+   */
   applicant?: (number | null) | Applicant;
+  applicantPassword?: string | null;
   /**
    * Use "Reset assessment" above to let the candidate retake the test.
    */
@@ -658,6 +662,10 @@ export interface Job {
    */
   slug?: string | null;
   status: 'open' | 'closed';
+  /**
+   * Shown as a badge on the listing and used to filter /careers.
+   */
+  department: 'design' | 'engage' | 'plus' | 'advise';
   location?: string | null;
   employmentType?: string | null;
   /**
@@ -719,8 +727,12 @@ export interface Application {
   aiStrengths?: string | null;
   aiGaps?: string | null;
   aiError?: string | null;
-  initialInterviewSlot?: (number | null) | InterviewSlot;
   initialInterviewAt?: string | null;
+  /**
+   * Paste a Teams (or Zoom/Meet) meeting link. Included in the email when you save.
+   */
+  initialInterviewLink?: string | null;
+  initialInterviewSlot?: (number | null) | InterviewSlot;
   initialResult?: ('pending' | 'passed' | 'failed') | null;
   initialNotes?: string | null;
   technicalAssessmentAt?: string | null;
@@ -1186,6 +1198,7 @@ export interface AssessmentsSelect<T extends boolean = true> {
   feedback?: T;
   result?: T;
   applicant?: T;
+  applicantPassword?: T;
   status?: T;
   token?: T;
   startedAt?: T;
@@ -1265,6 +1278,7 @@ export interface JobsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   status?: T;
+  department?: T;
   location?: T;
   employmentType?: T;
   summary?: T;
@@ -1295,8 +1309,9 @@ export interface ApplicationsSelect<T extends boolean = true> {
   aiStrengths?: T;
   aiGaps?: T;
   aiError?: T;
-  initialInterviewSlot?: T;
   initialInterviewAt?: T;
+  initialInterviewLink?: T;
+  initialInterviewSlot?: T;
   initialResult?: T;
   initialNotes?: T;
   technicalAssessmentAt?: T;

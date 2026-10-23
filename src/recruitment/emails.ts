@@ -23,6 +23,47 @@ export const schedulingLink = (token: string) =>
 export const adminApplicationLink = (id: number | string) =>
   `${siteUrl()}/admin/collections/applications/${id}`
 
+export const assessmentInviteLink = (token: string) =>
+  `${siteUrl()}/assessment/${encodeURIComponent(token)}`
+
+// A coding assessment was created directly in the Assessments collection (not via the hiring
+// pipeline, which emails its own "book your interview" / "technical assessment scheduled"
+// messages instead — see sendAssessmentScheduled below).
+export const sendAssessmentInvite = (payload: Payload, assessment: Assessment) =>
+  send(
+    payload,
+    assessment.candidateEmail,
+    'Your coding assessment is ready',
+    layout([
+      `Hi ${escapeHtml(assessment.candidateName?.trim() || 'there')},`,
+      `You have been invited to a coding assessment${
+        assessment.durationMinutes ? ` (${assessment.durationMinutes} minutes)` : ''
+      }.`,
+      assessment.expiresAt
+        ? `Please complete it before <strong>${escapeHtml(formatDateTime(assessment.expiresAt))}</strong>.`
+        : 'Start it whenever you are ready.',
+      button(assessmentInviteLink(assessment.token ?? ''), 'Start the assessment'),
+    ]),
+  )
+
+// An admin set up a login directly on the assessment ("Candidate login password") instead of
+// the candidate signing up themselves: emails them the password so they can sign in right away.
+export const sendApplicantLoginCreated = (payload: Payload, assessment: Assessment, password: string) => {
+  const link = assessmentInviteLink(assessment.token ?? '')
+  return send(
+    payload,
+    assessment.candidateEmail,
+    'Your login for the coding assessment',
+    layout([
+      `Hi ${escapeHtml(assessment.candidateName?.trim() || 'there')},`,
+      'An account was created for you so you can go straight to your coding assessment.',
+      `Email: <strong>${escapeHtml(assessment.candidateEmail)}</strong><br/>Password: <strong>${escapeHtml(password)}</strong>`,
+      button(link, 'Sign in and start the assessment'),
+      `Or use this link: <a href="${escapeHtml(link)}">${escapeHtml(link)}</a>`,
+    ]),
+  )
+}
+
 // Email failures are logged but never block saving the application.
 const send = async (payload: Payload, to: string | string[], subject: string, html: string) => {
   const recipients = Array.isArray(to) ? to : [to]
@@ -48,17 +89,34 @@ export const headOfPlusEmails = async (payload: Payload) => {
   return all.docs.map((u) => u.email)
 }
 
-// Step 3: the AI score reached the job's minimum.
+// Step 2: a candidate applied. Fires on every new application, regardless of AI score.
+export const notifyHeadOfPlusNewApplication = async (payload: Payload, app: Application, job: Job) =>
+  send(
+    payload,
+    await headOfPlusEmails(payload),
+    `New application: ${app.name || app.email} (${job.title})`,
+    layout([
+      'Hi,',
+      `<strong>${escapeHtml(app.name || app.email)}</strong> (${escapeHtml(app.email)}) applied for <strong>${escapeHtml(job.title)}</strong>.`,
+      app.resume
+        ? 'A resume was attached. The AI review is running now and will invite them to schedule if they match.'
+        : 'No resume was attached.',
+      button(adminApplicationLink(app.id), 'Open the application'),
+    ]),
+  )
+
+// Step 3: the AI score reached the job's minimum. The admin picks the interview time directly
+// on the application (not the candidate); this just tells them they're moving forward.
 export const sendSchedulingInvite = (payload: Payload, app: Application, job: Job) =>
   send(
     payload,
     app.email,
-    `Next step for ${job.title}: book your initial interview`,
+    `Next step for ${job.title}`,
     layout([
       greeting(app),
       `Thank you for applying for <strong>${escapeHtml(job.title)}</strong>. We reviewed your resume and would like to invite you to an initial interview.`,
-      'Choose a time that works for you:',
-      button(schedulingLink(app.schedulingToken ?? ''), 'Book your interview'),
+      "We'll be in touch shortly to confirm a time. You can check your application status anytime:",
+      button(`${siteUrl()}/applicant/login`, 'View your status'),
     ]),
   )
 
@@ -68,19 +126,23 @@ export const sendInterviewBooked = (
   app: Application,
   job: Job,
   slot: InterviewSlot | null,
-) =>
-  send(
+) => {
+  // Prefer the link pasted directly on the application (the normal path, since the admin sets
+  // the time); fall back to a booked Interview Slot's link for any still-open legacy bookings.
+  const meetingLink = app.initialInterviewLink || slot?.meetingLink
+  return send(
     payload,
     app.email,
     `Your initial interview for ${job.title} is booked`,
     layout([
       greeting(app),
       `Your initial interview for <strong>${escapeHtml(job.title)}</strong> is on <strong>${escapeHtml(formatDateTime(app.initialInterviewAt ?? ''))}</strong>.`,
-      slot?.meetingLink
-        ? `Join here: <a href="${escapeHtml(slot.meetingLink)}">${escapeHtml(slot.meetingLink)}</a>`
+      meetingLink
+        ? `Join here: <a href="${escapeHtml(meetingLink)}">${escapeHtml(meetingLink)}</a>`
         : 'We will send you the meeting details before the interview.',
     ]),
   )
+}
 
 // Step 5: tells the Head of Plus about the booked interview.
 export const notifyHeadOfPlusInterview = async (payload: Payload, app: Application, job: Job) =>
