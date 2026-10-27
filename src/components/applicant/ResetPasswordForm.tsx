@@ -3,12 +3,19 @@
 import React, { useState } from 'react'
 
 import { PasswordInput } from './PasswordInput'
+import { withBase } from '@/lib/basePath'
 
 const MIN_PASSWORD_LENGTH = 8
 
 // Opened from a "forgot password" email. Unlike SetPasswordForm (first-time sign-up), the
 // applicant already has a name on file, so this only asks for the new password.
-export const ResetPasswordForm = ({ next = '/applicant', token }: { next?: string; token: string }) => {
+export const ResetPasswordForm = ({
+  next = '/applicant',
+  token,
+}: {
+  next?: string
+  token: string
+}) => {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +31,7 @@ export const ResetPasswordForm = ({ next = '/applicant', token }: { next?: strin
 
     setBusy(true)
     try {
-      const res = await fetch('/applicant/auth/set-password', {
+      const res = await fetch(withBase('/applicant/auth/set-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
